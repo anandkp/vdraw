@@ -16,15 +16,19 @@ import { Create as CreateIcon } from "@material-ui/icons";
 import { findLastIndex, cloneDeep } from "lodash";
 import useImage from "use-image";
 
-const CustomImage = memo(({ src }: any) => {
-  const [image, status] = useImage(src);
-  //   const image = (
-  //     <img src="blob:http://localhost:3000/92aef405-889a-4be6-af6f-829a5312a2a2"></img>
-  //   );
-  console.log("<SRC>", image);
-
+const CustomImage: FC<any> = memo((props) => {
+  const { id, src, handleDragStart, handleDragEnd } = props;
+  const [image] = useImage(src);
   return (
-    <Image x={Math.random() * 100} y={Math.random() * 100} image={image} />
+    <Image
+      id={id}
+      x={50}
+      y={50}
+      image={image}
+      draggable={true}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    />
   );
 });
 
@@ -35,12 +39,17 @@ interface IObject {
 
 interface IBoardState {
   objects: IObject[];
+  isPaint: boolean;
+  mode: string;
 }
 const initialState: IBoardState = {
+  isPaint: false,
+  mode: "brush",
   objects: [
     {
       type: "text",
       property: {
+        id: Date.now().toString(),
         text: "Scrib.ink",
         x: 10,
         y: 10,
@@ -65,6 +74,18 @@ const reducer = (state: IBoardState, action: any): IBoardState => {
         objects: action.payload,
       };
     }
+    case "setIsPaint": {
+      return {
+        ...state,
+        isPaint: action.payload,
+      };
+    }
+    case "setMode": {
+      return {
+        ...state,
+        mode: action.payload,
+      };
+    }
     default: {
       return state;
     }
@@ -82,26 +103,7 @@ export const Board: FC = () => {
   };
 
   const stageRef = useRef(null);
-  //   console.log("app loaded.....");
-  //   const [objects, setObjects] = useState<IObject[]>([
-  //     {
-  //       type: "text",
-  //       property: {
-  //         text: "Scrib.ink",
-  //         x: 10,
-  //         y: 10,
-  //         fontSize: 20,
-  //         draggable: true,
-  //         width: 200,
-  //       },
-  //     },
-  //   ]);
-  //   const [images, setImages] = useState<IObject[]>([]);
 
-  const [isPaint, setIsPaint] = useState(false);
-  const [mode, setMode] = useState("brush");
-  // const [image, setImage] = useState();
-  // const [isDragging, setIsDragging] = useState<boolean>(false);
   const [cursor, setCursor] = useState<string>("default");
 
   const cursors = {
@@ -110,8 +112,6 @@ export const Board: FC = () => {
   };
 
   const pasteImage = (e: Event) => {
-    console.log(state.objects);
-
     const { clipboardData } = e as ClipboardEvent;
     const items = clipboardData?.items;
 
@@ -128,14 +128,13 @@ export const Board: FC = () => {
 
         setState("addObjects", {
           type: "image",
-          property: { src },
+          property: { id: Date.now().toString(), src },
         });
       }
     }
   };
 
   useEffect(() => {
-    console.log("useeffect");
     window.addEventListener("paste", pasteImage);
 
     return () => {
@@ -144,16 +143,17 @@ export const Board: FC = () => {
   }, []);
 
   const handleDown = () => {
-    setIsPaint(true);
+    setState("setIsPaint", true);
     var pos = ((stageRef.current as unknown) as Konva.Stage).getPointerPosition();
     if (pos !== null) {
       const line = {
         type: "line",
         property: {
+          id: Date.now().toString(),
           stroke: "#ff0000",
           strokeWidth: 2,
           globalCompositeOperation:
-            mode === "brush" ? "source-over" : "destination-out",
+            state.mode === "brush" ? "source-over" : "destination-out",
           points: [pos.x, pos.y],
         },
       };
@@ -164,12 +164,12 @@ export const Board: FC = () => {
   };
 
   const handleUp = () => {
-    setIsPaint(false);
+    setState("setIsPaint", false);
     setCursor("default");
   };
 
   const handleMove = () => {
-    if (!isPaint) {
+    if (!state.isPaint) {
       return;
     }
 
@@ -185,12 +185,13 @@ export const Board: FC = () => {
   };
 
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) =>
-    setMode(e.target.value);
+    setState("setMode", e.target.value);
 
   const handleAddText = () => {
     const text = {
       type: "text",
       property: {
+        id: Date.now().toString(),
         text: "Some text here",
         x: 50,
         y: 80,
@@ -209,6 +210,23 @@ export const Board: FC = () => {
     };
 
     setState("addObjects", text);
+  };
+
+  const handleDragStart = (id: string) => (e: any) => {
+    // console.log("start", id);
+  };
+  const handleDragEnd = (id: string) => (e: any) => {
+    const newObjects = state.objects.slice();
+    const imageIndex = state.objects.findIndex(
+      (o) => o.type === "image" && o.property.id === id
+    );
+    let image = state.objects[imageIndex];
+    image.property.x = e.target.x();
+    image.property.y = e.target.y();
+    newObjects.splice(imageIndex, 1, image);
+    setState("setObjects", newObjects);
+
+    // console.log("end", id, e.target.x(), e.target.y());
   };
 
   return (
@@ -258,18 +276,24 @@ export const Board: FC = () => {
           <Layer>
             {state.objects
               .filter((e) => e.type === "line")
-              ?.map((line: IObject) => (
-                <Line {...line.property} />
+              ?.map((line: IObject, index: number) => (
+                <Line key={index} {...line.property} />
               ))}
             {state.objects
               .filter((e) => e.type === "text")
-              ?.map((text: IObject) => (
-                <Text {...text.property} />
+              ?.map((text: IObject, index: number) => (
+                <Text key={index} {...text.property} />
               ))}
             {state.objects
               .filter((e) => e.type === "image")
-              ?.map((image: IObject) => (
-                <CustomImage src={image.property.src} />
+              ?.map((image: IObject, index: number) => (
+                <CustomImage
+                  key={index}
+                  id={image.property.id}
+                  src={image.property.src}
+                  handleDragStart={handleDragStart(image.property.id)}
+                  handleDragEnd={handleDragEnd(image.property.id)}
+                />
               ))}
           </Layer>
         </Stage>

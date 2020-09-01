@@ -239,7 +239,7 @@ export const Board: FC = () => {
         style={{
           border: "0px solid red",
           width: "100px",
-          backgroundColor: "#3f3d55",
+          backgroundColor: "#222", // "#4c4c4c",
         }}
       >
         <EraserIcon />

@@ -1,11 +1,19 @@
-import React, { useRef, useState, ChangeEvent, useEffect, memo } from "react";
+import React, {
+  useRef,
+  useState,
+  ChangeEvent,
+  useEffect,
+  memo,
+  useReducer,
+  FC,
+} from "react";
 import { Stage, Layer, Line, Text, Image } from "react-konva";
 import Konva from "konva";
 import { Grid, IconButton } from "@material-ui/core";
 import { ReactComponent as EraserIcon } from "assets/images/eraser.svg";
 import { ReactComponent as AddTextIcon } from "assets/images/format-text.svg";
 import { Create as CreateIcon } from "@material-ui/icons";
-import { findLastIndex } from "lodash";
+import { findLastIndex, cloneDeep } from "lodash";
 import useImage from "use-image";
 
 const CustomImage = memo(({ src }: any) => {
@@ -15,7 +23,9 @@ const CustomImage = memo(({ src }: any) => {
   //   );
   console.log("<SRC>", image);
 
-  return <Image x={500} y={100} image={image} />;
+  return (
+    <Image x={Math.random() * 100} y={Math.random() * 100} image={image} />
+  );
 });
 
 interface IObject {
@@ -23,14 +33,15 @@ interface IObject {
   property: any;
 }
 
-export const Board = () => {
-  const stageRef = useRef(null);
-  //   console.log("app loaded.....");
-  const [objects, setObjects] = useState<IObject[]>([
+interface IBoardState {
+  objects: IObject[];
+}
+const initialState: IBoardState = {
+  objects: [
     {
       type: "text",
       property: {
-        text: "SCRIB.INK",
+        text: "Scrib.ink",
         x: 10,
         y: 10,
         fontSize: 20,
@@ -38,7 +49,55 @@ export const Board = () => {
         width: 200,
       },
     },
-  ]);
+  ],
+};
+const reducer = (state: IBoardState, action: any): IBoardState => {
+  switch (action.type) {
+    case "addObjects": {
+      return {
+        ...state,
+        objects: [...state.objects, action.payload],
+      };
+    }
+    case "setObjects": {
+      return {
+        ...state,
+        objects: action.payload,
+      };
+    }
+    default: {
+      return state;
+    }
+  }
+};
+
+export const Board: FC = () => {
+  const [state, dispatch] = useReducer(reducer, cloneDeep(initialState));
+
+  const setState = (type: string, payload?: any) => {
+    dispatch({
+      type,
+      payload,
+    });
+  };
+
+  const stageRef = useRef(null);
+  //   console.log("app loaded.....");
+  //   const [objects, setObjects] = useState<IObject[]>([
+  //     {
+  //       type: "text",
+  //       property: {
+  //         text: "Scrib.ink",
+  //         x: 10,
+  //         y: 10,
+  //         fontSize: 20,
+  //         draggable: true,
+  //         width: 200,
+  //       },
+  //     },
+  //   ]);
+  //   const [images, setImages] = useState<IObject[]>([]);
+
   const [isPaint, setIsPaint] = useState(false);
   const [mode, setMode] = useState("brush");
   // const [image, setImage] = useState();
@@ -51,44 +110,26 @@ export const Board = () => {
   };
 
   const pasteImage = (e: Event) => {
-    console.log(objects);
+    console.log(state.objects);
 
-    // let clipboardEvent: ClipboardEvent = <ClipboardEvent> event;
     const { clipboardData } = e as ClipboardEvent;
     const items = clipboardData?.items;
 
     e.preventDefault();
     e.stopPropagation();
     if (items) {
-      //Loop through files
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf("image") === -1) continue;
         const file = items[i];
-        // type = items[i].type;
 
         const imageData = file.getAsFile();
         const URLobj = window.URL || window.webkitURL;
-        // const img = new Image();
         const src = URLobj.createObjectURL(imageData);
-        // img.src = src;
-        // fabric.Image.fromURL(img.src, function (img) {
-        //   canvas.add(img);
-        // });
-        console.log(objects, [
-          ...objects,
-          {
-            type: "image",
-            property: { src },
-          },
-        ]);
 
-        setObjects([
-          ...objects,
-          {
-            type: "image",
-            property: { src },
-          },
-        ]);
+        setState("addObjects", {
+          type: "image",
+          property: { src },
+        });
       }
     }
   };
@@ -117,7 +158,8 @@ export const Board = () => {
         },
       };
       setCursor(cursors.line);
-      setObjects([...objects, line]);
+
+      setState("addObjects", line);
     }
   };
 
@@ -133,12 +175,12 @@ export const Board = () => {
 
     const pos = ((stageRef.current as unknown) as Konva.Stage).getPointerPosition();
     if (pos !== null) {
-      const newObjects = objects.slice();
-      const lineIndex = findLastIndex(objects, (o) => o.type === "line");
-      let line = objects[lineIndex];
+      const newObjects = state.objects.slice();
+      const lineIndex = findLastIndex(state.objects, (o) => o.type === "line");
+      let line = state.objects[lineIndex];
       line.property.points = line.property.points.concat([pos.x, pos.y]);
       newObjects.splice(lineIndex, 1, line);
-      setObjects(newObjects);
+      setState("setObjects", newObjects);
     }
   };
 
@@ -166,7 +208,7 @@ export const Board = () => {
       },
     };
 
-    setObjects([...objects, text]);
+    setState("addObjects", text);
   };
 
   return (
@@ -214,17 +256,17 @@ export const Board = () => {
           onTouchMove={handleMove}
         >
           <Layer>
-            {objects
+            {state.objects
               .filter((e) => e.type === "line")
               ?.map((line: IObject) => (
                 <Line {...line.property} />
               ))}
-            {objects
+            {state.objects
               .filter((e) => e.type === "text")
               ?.map((text: IObject) => (
                 <Text {...text.property} />
               ))}
-            {objects
+            {state.objects
               .filter((e) => e.type === "image")
               ?.map((image: IObject) => (
                 <CustomImage src={image.property.src} />

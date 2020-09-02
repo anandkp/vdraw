@@ -8,7 +8,6 @@ import {
   IconButton,
   Paper,
   Popper,
-  Slider,
   Toolbar,
   Tooltip,
   Typography,
@@ -31,11 +30,12 @@ import {
 import { ReactComponent as EllipseIcon } from "assets/images/ellipse-outline.svg";
 import { ReactComponent as EraserIcon } from "assets/images/eraser.svg";
 import { ReactComponent as LogoIcon } from "assets/images/fountain-pen-tip.svg";
-import React, { MouseEvent, useState, useReducer } from "react";
-import { CirclePicker, ColorResult } from "react-color";
-import { Action } from "./Action";
-import { Board } from "./Board";
 import { cloneDeep } from "lodash";
+import React, { MouseEvent, useReducer } from "react";
+import { CirclePicker, ColorResult } from "react-color";
+import { Board } from "./Board";
+import { Action } from "./components/Action";
+import { SizeSelector } from "./components/SizeSelector";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -203,10 +203,6 @@ export const App = () => {
     });
   };
 
-  const handleSliderChange = (event: any, newValue: number | number[]) => {
-    setState("setSliderValue", newValue as number);
-  };
-
   return (
     <div className={classes.pageContainer}>
       <AppBar position="static" className={classes.appBar}>
@@ -230,12 +226,6 @@ export const App = () => {
             </IconButton>
           </Tooltip>
 
-          {/* <Button
-            startIcon={<GroupAddIcon className={classes.iconButton} />}
-            style={{ color: "#fff" }}
-          >
-            Invite Others
-          </Button> */}
           <Button style={{ color: "#fff" }}>Login</Button>
         </Toolbar>
       </AppBar>
@@ -304,7 +294,7 @@ export const App = () => {
             onClick={handleModeChange}
             toolTip="Ellipse Tool"
           />
-
+          <Divider style={{ backgroundColor: "#535353", marginTop: 5 }} />
           <Tooltip title="Undo" aria-label="Undo" placement="right">
             <IconButton onClick={() => {}}>
               <UndoIcon className={classes.iconButton} />
@@ -334,32 +324,15 @@ export const App = () => {
             </Tooltip>
           )}
           <Divider style={{ backgroundColor: "#535353", marginTop: 5 }} />
-          {["brush", "erase", "textTool"].includes(state.mode) && (
-            <div
-              style={{
-                width: 50,
-                // border: "1px solid red",
-                height: 100,
-                marginTop: 20,
-              }}
-            >
-              <Slider
-                value={state.sliderValue}
-                valueLabelDisplay="auto"
-                onChange={handleSliderChange}
-                orientation="vertical"
-                defaultValue={state.sliderValue}
-                aria-labelledby="vertical-slider"
-                min={1}
-                max={state.mode === "erase" ? 100 : 10}
-                style={{ marginLeft: 10, color: "#fff" }}
-                classes={{
-                  // markLabel: classes.markLabel,
-                  valueLabel: classes.valueLabel,
-                }}
-              />
-            </div>
-          )}
+          {/* {["brush", "erase", "textTool"].includes(state.mode) && (
+            <SizeSelector
+              onChange={(newValue: number) =>
+                setState("setSliderValue", newValue)
+              }
+              sliderValue={state.sliderValue}
+              max={state.mode === "erase" ? 100 : 10}
+            />
+          )} */}
         </Grid>
         <Grid item className={classes.board} xs={11}>
           <Board
@@ -424,8 +397,33 @@ export const App = () => {
                       ]}
                     />
                   )}
-                  {state.popperSource === "brush" && <div>brush</div>}
-                  {state.popperSource === "erase" && <div>erase</div>}
+                  {state.popperSource === "brush" && (
+                    <SizeSelector
+                      onChange={(newValue: number) =>
+                        setState("setSliderValue", newValue)
+                      }
+                      sliderValue={state.sliderValue}
+                      max={10}
+                    />
+                  )}
+                  {state.popperSource === "erase" && (
+                    <SizeSelector
+                      onChange={(newValue: number) =>
+                        setState("setSliderValue", newValue)
+                      }
+                      sliderValue={state.sliderValue}
+                      max={100}
+                    />
+                  )}
+                  {state.popperSource === "textTool" && (
+                    <SizeSelector
+                      onChange={(newValue: number) =>
+                        setState("setSliderValue", newValue)
+                      }
+                      sliderValue={state.sliderValue}
+                      max={10}
+                    />
+                  )}
                 </div>
               </ClickAwayListener>
             </Paper>

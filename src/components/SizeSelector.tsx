@@ -4,45 +4,50 @@ import React, { FC } from "react";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    root: {
-      flexGrow: 1,
-    },
-    iconButton: {
-      fill: "#fff",
-    },
-    iconButtonRoot: {
-      borderRadius: 0,
+    valueLabel: {
+      // color: "#222",
+      "& *": {
+        background: "#fff",
+        color: "#222",
+      },
     },
   })
 );
 
-interface ISizeSelectorProps {}
+interface ISizeSelectorProps {
+  onChange: (newValue: number) => void;
+  sliderValue: number;
+  max: number;
+}
 export const SizeSelector: FC<ISizeSelectorProps> = (props) => {
   const classes = useStyles();
 
+  const handleSliderChange = (event: any, newValue: number | number[]) => {
+    props.onChange(newValue as number);
+  };
+
   return (
-    <div>test</div>
-    // <div
-    //   style={{
-    //     width: 50,
-    //     height: 100,
-    //     marginTop: 20,
-    //   }}
-    // >
-    //   <Slider
-    //     value={sliderValue}
-    //     valueLabelDisplay="auto"
-    //     onChange={handleSliderChange}
-    //     orientation="vertical"
-    //     defaultValue={sliderValue}
-    //     aria-labelledby="vertical-slider"
-    //     min={1}
-    //     max={mode === "erase" ? 100 : 10}
-    //     style={{ marginLeft: 10, color: "#fff" }}
-    //     classes={{
-    //       valueLabel: classes.valueLabel,
-    //     }}
-    //   />
-    // </div>
+    <div
+      style={{
+        // width: 50,
+        height: 100,
+        // marginTop: 20,
+      }}
+    >
+      <Slider
+        value={props.sliderValue}
+        valueLabelDisplay="auto"
+        onChange={handleSliderChange}
+        orientation="vertical"
+        defaultValue={props.sliderValue}
+        aria-labelledby="vertical-slider"
+        min={1}
+        max={props.max}
+        style={{ color: "#fff" }}
+        classes={{
+          valueLabel: classes.valueLabel,
+        }}
+      />
+    </div>
   );
 };

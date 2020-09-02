@@ -30,7 +30,10 @@ import {
   Redo as RedoIcon,
   TextFields as TextFieldsIcon,
   TextFormat as TextFormatIcon,
+  Create as CreateIcon,
+  GetApp as GetAppIcon,
 } from "@material-ui/icons";
+import { ReactComponent as LogoIcon } from "assets/images/fountain-pen-tip.svg";
 import { ReactComponent as EraserIcon } from "assets/images/eraser.svg";
 import { ReactComponent as EllipseIcon } from "assets/images/ellipse-outline.svg";
 import { CirclePicker, ColorResult } from "react-color";
@@ -43,8 +46,15 @@ const useStyles = makeStyles((theme: Theme) =>
     pageContainer: {
       // minHeight: "100vh",
     },
+    logo: {
+      fill: "#f44336", // "#00ffa5",
+      marginLeft: -10,
+    },
     title: {
       flexGrow: 1,
+      verticalAlign: "baseline",
+      marginLeft: 10,
+      color: "#f44336", // "#00ffa5",
     },
     menuButton: {
       marginRight: theme.spacing(2),
@@ -178,20 +188,28 @@ export const App = () => {
           {/* <IconButton edge="start" className={classes.menuButton} color="inherit" aria-label="menu">
       <MenuIcon />
     </IconButton> */}
+          <LogoIcon className={classes.logo} />
           <Typography variant="h6" color="inherit" className={classes.title}>
             Scrib.ink
           </Typography>
-          {/* <Tooltip title="Invite Others" aria-label="Invite Others">
+
+          <Tooltip title="Invite Others" aria-label="Invite Others">
             <IconButton>
-              
+              <GroupAddIcon className={classes.iconButton} />
             </IconButton>
-          </Tooltip> */}
-          <Button
+          </Tooltip>
+          <Tooltip title="Export" aria-label="Export">
+            <IconButton>
+              <GetAppIcon className={classes.iconButton} />
+            </IconButton>
+          </Tooltip>
+
+          {/* <Button
             startIcon={<GroupAddIcon className={classes.iconButton} />}
             style={{ color: "#fff" }}
           >
             Invite Others
-          </Button>
+          </Button> */}
           <Button style={{ color: "#fff" }}>Login</Button>
         </Toolbar>
       </AppBar>
@@ -222,7 +240,7 @@ export const App = () => {
                   backgroundColor: mode === "brush" ? "#7a7a7a" : "inherit",
                 }}
               >
-                <BorderColorIcon className={classes.iconButton} />
+                <CreateIcon className={classes.iconButton} />
               </ToggleButton>
             </Tooltip>
             <Tooltip

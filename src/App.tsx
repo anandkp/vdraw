@@ -1,43 +1,41 @@
-import React, { useState, MouseEvent } from "react";
-import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
-import { Board } from "./Board";
 import {
   AppBar,
-  Typography,
-  Toolbar,
+  Button,
+  ClickAwayListener,
+  Divider,
+  Fade,
   Grid,
   IconButton,
-  Tooltip,
-  Popper,
-  Fade,
   Paper,
-  ClickAwayListener,
+  Popper,
   Slider,
-  Divider,
-  Button,
+  Toolbar,
+  Tooltip,
+  Typography,
 } from "@material-ui/core";
-import ToggleButton from "@material-ui/lab/ToggleButton";
-import ToggleButtonGroup from "@material-ui/lab/ToggleButtonGroup";
+import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 import {
+  Create as CreateIcon,
   Crop169 as Crop169Icon,
-  RadioButtonUnchecked as RadioButtonUncheckedIcon,
-  BorderColor as BorderColorIcon,
-  OpenWith as OpenWithIcon,
   CropSquare as CropSquareIcon,
+  GetApp as GetAppIcon,
   GroupAdd as GroupAddIcon,
+  OpenWith as OpenWithIcon,
   Palette as PaletteIcon,
-  Undo as UndoIcon,
+  RadioButtonUnchecked as RadioButtonUncheckedIcon,
   Redo as RedoIcon,
   TextFields as TextFieldsIcon,
   TextFormat as TextFormatIcon,
-  Create as CreateIcon,
-  GetApp as GetAppIcon,
+  Undo as UndoIcon,
 } from "@material-ui/icons";
-import { ReactComponent as LogoIcon } from "assets/images/fountain-pen-tip.svg";
-import { ReactComponent as EraserIcon } from "assets/images/eraser.svg";
 import { ReactComponent as EllipseIcon } from "assets/images/ellipse-outline.svg";
+import { ReactComponent as EraserIcon } from "assets/images/eraser.svg";
+import { ReactComponent as LogoIcon } from "assets/images/fountain-pen-tip.svg";
+import React, { MouseEvent, useState, useReducer } from "react";
 import { CirclePicker, ColorResult } from "react-color";
 import { Action } from "./Action";
+import { Board } from "./Board";
+import { cloneDeep } from "lodash";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -107,88 +105,106 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-const toggleStyles = makeStyles(
-  {
-    root: {
-      backgroundColor: "#222",
-      "&:hover": {
-        backgroundColor: "#ff0000",
-      },
-      // "&:focus": {
-      //   backgroundColor: "#c4c4c4",
-      // },
-      "&:active": {
-        backgroundColor: "blue",
-      },
-      "&:visited": {
-        backgroundColor: "green",
-      },
-    },
-    label: {
-      /* … */
-    },
-    outlined: {
-      /* … */
-      "&$disabled": {
-        /* … */
-      },
-    },
-    outlinedPrimary: {
-      /* … */
-      "&:hover": {
-        color: "#ff0000",
-      },
-    },
-    disabled: {},
-  },
-  { name: "MuiButton" }
-);
+interface IAppState {
+  mode: string;
+  color: string;
+  anchorEl: HTMLButtonElement | null;
+  open: boolean;
+  popperSource: string;
+  sliderValue: number;
+}
+const initialState: IAppState = {
+  mode: "brush",
+  color: "#f44336",
+  anchorEl: null,
+  open: false,
+  popperSource: "swatch",
+  sliderValue: 2,
+};
+const reducer = (state: IAppState, action: any): IAppState => {
+  switch (action.type) {
+    case "setMode": {
+      return {
+        ...state,
+        mode: action.payload,
+        sliderValue:
+          action.payload === "brush"
+            ? 2
+            : action.payload === "erase"
+            ? 10
+            : state.sliderValue,
+      };
+    }
+    case "setColor": {
+      return {
+        ...state,
+        color: action.payload,
+      };
+    }
+    case "setPopper": {
+      return {
+        ...state,
+        popperSource: action.payload.source,
+        anchorEl: action.payload.event,
+        open: !state.open,
+      };
+    }
+    case "setSliderValue": {
+      return {
+        ...state,
+        sliderValue: action.payload,
+      };
+    }
+    case "setOpen": {
+      return {
+        ...state,
+        open: action.payload,
+      };
+    }
+    default: {
+      return state;
+    }
+  }
+};
 
 export const App = () => {
   const classes = useStyles();
-  // const toggleClass = toggleStyles();
 
-  const [mode, setMode] = useState("brush");
-  const [color, setColor] = useState<string>("#f44336");
+  const [state, dispatch] = useReducer(reducer, cloneDeep(initialState));
 
-  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-  const [open, setOpen] = useState(false);
-  const [popperSource, setPopperSource] = useState("swatch");
-
-  const [sliderValue, setSliderValue] = useState<number>(2);
+  const setState = (type: string, payload?: any) =>
+    dispatch({
+      type,
+      payload,
+    });
 
   // console.log("mode--->", mode, color);
   const handleModeChange = (
     nextView: string,
     event: MouseEvent<HTMLButtonElement>
   ) => {
-    setMode(nextView);
-    if (nextView === "brush") {
-      setSliderValue(2);
-    } else if (nextView === "erase") {
-      setSliderValue(10);
-    }
+    setState("setMode", nextView);
 
     if (["brush", "textTool", "erase"].includes(nextView)) {
-      console.log("here");
       handleOpenPopper(nextView)(event);
     }
   };
 
   const handleColorChange = (color: ColorResult) => {
-    setColor(color.hex);
+    setState("setColor", color.hex);
   };
 
   const handleOpenPopper = (source: string) => (
     event: MouseEvent<HTMLButtonElement>
   ) => {
-    setPopperSource(source);
-    setAnchorEl(event.currentTarget);
-    setOpen(!open);
+    setState("setPopper", {
+      source,
+      event: event.currentTarget,
+    });
   };
 
   const handleSliderChange = (event: any, newValue: number | number[]) => {
-    setSliderValue(newValue as number);
+    setState("setSliderValue", newValue as number);
   };
 
   return (
@@ -227,63 +243,63 @@ export const App = () => {
         <Grid item className={classes.leftMenu}>
           <Action
             id="move"
-            mode={mode}
+            mode={state.mode}
             icon={OpenWithIcon}
             onClick={handleModeChange}
             toolTip="Move"
           />
           <Action
             id="brush"
-            mode={mode}
+            mode={state.mode}
             icon={CreateIcon}
             onClick={handleModeChange}
             toolTip="Pen Tool"
           />
           <Action
             id="textField"
-            mode={mode}
+            mode={state.mode}
             icon={TextFieldsIcon}
             onClick={handleModeChange}
             toolTip="TextField Tool"
           />
           <Action
             id="textTool"
-            mode={mode}
+            mode={state.mode}
             icon={TextFormatIcon}
             onClick={handleModeChange}
             toolTip="Text Tool"
           />
           <Action
             id="erase"
-            mode={mode}
+            mode={state.mode}
             icon={EraserIcon}
             onClick={handleModeChange}
             toolTip="Erase Tool"
           />
           <Action
             id="square"
-            mode={mode}
+            mode={state.mode}
             icon={CropSquareIcon}
             onClick={handleModeChange}
             toolTip="Square Tool"
           />
           <Action
             id="rect"
-            mode={mode}
+            mode={state.mode}
             icon={Crop169Icon}
             onClick={handleModeChange}
             toolTip="Rectangle Tool"
           />
           <Action
             id="circle"
-            mode={mode}
+            mode={state.mode}
             icon={RadioButtonUncheckedIcon}
             onClick={handleModeChange}
             toolTip="Circle Tool"
           />
           <Action
             id="ellipse"
-            mode={mode}
+            mode={state.mode}
             icon={EllipseIcon}
             onClick={handleModeChange}
             toolTip="Ellipse Tool"
@@ -299,7 +315,7 @@ export const App = () => {
               <RedoIcon className={classes.iconButton} />
             </IconButton>
           </Tooltip>
-          {mode !== "move" && (
+          {state.mode !== "move" && (
             <Tooltip
               title="Choose Color"
               aria-label="Choose Color"
@@ -309,16 +325,16 @@ export const App = () => {
                 <PaletteIcon
                   className={classes.iconButton}
                   style={{
-                    fill: color,
+                    fill: state.color,
                     backgroundColor:
-                      color === "#000000" ? "#7a7a7a" : "inherit",
+                      state.color === "#000000" ? "#7a7a7a" : "inherit",
                   }}
                 />
               </IconButton>
             </Tooltip>
           )}
           <Divider style={{ backgroundColor: "#535353", marginTop: 5 }} />
-          {["brush", "erase", "textTool"].includes(mode) && (
+          {["brush", "erase", "textTool"].includes(state.mode) && (
             <div
               style={{
                 width: 50,
@@ -328,14 +344,14 @@ export const App = () => {
               }}
             >
               <Slider
-                value={sliderValue}
+                value={state.sliderValue}
                 valueLabelDisplay="auto"
                 onChange={handleSliderChange}
                 orientation="vertical"
-                defaultValue={sliderValue}
+                defaultValue={state.sliderValue}
                 aria-labelledby="vertical-slider"
                 min={1}
-                max={mode === "erase" ? 100 : 10}
+                max={state.mode === "erase" ? 100 : 10}
                 style={{ marginLeft: 10, color: "#fff" }}
                 classes={{
                   // markLabel: classes.markLabel,
@@ -346,13 +362,17 @@ export const App = () => {
           )}
         </Grid>
         <Grid item className={classes.board} xs={11}>
-          <Board mode={mode} color={color} sliderValue={sliderValue} />
+          <Board
+            mode={state.mode}
+            color={state.color}
+            sliderValue={state.sliderValue}
+          />
         </Grid>
       </Grid>
 
       <Popper
-        open={open}
-        anchorEl={anchorEl}
+        open={state.open}
+        anchorEl={state.anchorEl}
         placement={"left"}
         transition
         disablePortal={false}
@@ -374,13 +394,13 @@ export const App = () => {
           <Fade {...TransitionProps} timeout={350}>
             <Paper
               className={classes.swatchContainer}
-              onMouseLeave={() => setOpen(false)}
+              onMouseLeave={() => setState("setOpen", false)}
             >
-              <ClickAwayListener onClickAway={() => setOpen(false)}>
+              <ClickAwayListener onClickAway={() => setState("setOpen", false)}>
                 <div>
-                  {popperSource === "swatch" && (
+                  {state.popperSource === "swatch" && (
                     <CirclePicker
-                      color={color}
+                      color={state.color}
                       onChangeComplete={handleColorChange}
                       colors={[
                         "#f44336",
@@ -404,8 +424,8 @@ export const App = () => {
                       ]}
                     />
                   )}
-                  {popperSource === "brush" && <div>brush</div>}
-                  {popperSource === "erase" && <div>erase</div>}
+                  {state.popperSource === "brush" && <div>brush</div>}
+                  {state.popperSource === "erase" && <div>erase</div>}
                 </div>
               </ClickAwayListener>
             </Paper>

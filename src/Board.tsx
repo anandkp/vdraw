@@ -1,30 +1,18 @@
+import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
+import Konva from "konva";
+import { cloneDeep, findLastIndex } from "lodash";
 import React, {
+  ChangeEvent,
+  FC,
+  memo,
+  useEffect,
+  useReducer,
   useRef,
   useState,
-  ChangeEvent,
-  useEffect,
-  memo,
-  useReducer,
-  FC,
 } from "react";
-import "./Board.css";
-import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
-import { Stage, Layer, Line, Text, Image } from "react-konva";
-import Konva from "konva";
-import { Grid, IconButton } from "@material-ui/core";
-import { ReactComponent as EraserIcon } from "assets/images/eraser.svg";
-import { ReactComponent as AddTextIcon } from "assets/images/format-text.svg";
-import {
-  Create as CreateIcon,
-  ViewList as ViewListIcon,
-  ViewModule as ViewModuleIcon,
-  ViewQuilt as ViewQuiltIcon,
-} from "@material-ui/icons";
-import { findLastIndex, cloneDeep } from "lodash";
+import { Image, Layer, Line, Stage, Text } from "react-konva";
 import useImage from "use-image";
-import ToggleButton from "@material-ui/lab/ToggleButton";
-import ToggleButtonGroup from "@material-ui/lab/ToggleButtonGroup";
-import classes from "*.module.css";
+import "./Board.css";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -39,7 +27,7 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 const CustomImage: FC<any> = memo((props) => {
-  const { id, src, handleDragStart, handleDragEnd } = props;
+  const { id, src, handleDragStart, handleDragEnd, draggable } = props;
   const [image] = useImage(src);
   return (
     <Image
@@ -47,7 +35,7 @@ const CustomImage: FC<any> = memo((props) => {
       x={50}
       y={50}
       image={image}
-      draggable={true}
+      draggable={draggable}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     />
@@ -141,11 +129,6 @@ export const Board: FC<IBoardProps> = (props) => {
   const stageRef = useRef(null);
 
   const [cursor, setCursor] = useState<string>("default");
-
-  //   const cursors = {
-  //     text: "text",
-  //     line: `url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAABh0lEQVRIS7XVv2vCQBQH8PdwEYdO2SJFcAtSkiFubY0UUvIfhOLi0CVzUQhOilrsf9Ct2NKlqzSkkO5CoZZkECQW7OrQwUFor1whJfFXjdGb7z7v3YP7HsKOFnouIYRFxI9t1fHDtcFgoLIsex+Px28R0YlSxA9z1WrVbrVaUCgUQFGUkSRJN4lE4hIRP8MW+YPpwW63+y6K4n65XIZ2uw3T6RQMw3jlef4oLB6ACSG1dDqt064rlQo4jgMMw3ybpvkWFp+FZV3XH+v1euDmm+ABmGqu675IknQwHA5jfj0sPgcTQvZc133O5/OR8DmYdrkNfCG8DXwpHBVfCUfB/4XXwS3L6mUymWP/I1oLXoWnUqmvYrEYk2W5l81mDz18bXgRTlFVVWONRgM4jgPbts8R8ZruDQX7cU3TBJ7ngaK+6L1DxLONYA+fTCZPgiCI/X7/1202m1AqlU4R0dgY9vDxePzQ6XROkskk5HK5C0S88roPPYrZXCaEcAAwmo3VyPCyD2Bn8A8S2gEmQxchowAAAABJRU5ErkJggg==") 4 4, auto`,
-  //   };
 
   const pasteImage = (e: Event) => {
     const { clipboardData } = e as ClipboardEvent;
@@ -319,11 +302,6 @@ export const Board: FC<IBoardProps> = (props) => {
     >
       <Layer>
         {state.objects
-          .filter((e) => e.type === "line")
-          ?.map((line: IObject, index: number) => (
-            <Line key={index} {...line.property} />
-          ))}
-        {state.objects
           .filter((e) => e.type === "text")
           ?.map((text: IObject, index: number) => (
             <Text key={index} {...text.property} />
@@ -337,7 +315,13 @@ export const Board: FC<IBoardProps> = (props) => {
               src={image.property.src}
               handleDragStart={handleDragStart(image.property.id)}
               handleDragEnd={handleDragEnd(image.property.id)}
+              draggable={props.mode === "move"}
             />
+          ))}
+        {state.objects
+          .filter((e) => e.type === "line")
+          ?.map((line: IObject, index: number) => (
+            <Line key={index} {...line.property} />
           ))}
       </Layer>
     </Stage>

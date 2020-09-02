@@ -37,6 +37,7 @@ import { ReactComponent as LogoIcon } from "assets/images/fountain-pen-tip.svg";
 import { ReactComponent as EraserIcon } from "assets/images/eraser.svg";
 import { ReactComponent as EllipseIcon } from "assets/images/ellipse-outline.svg";
 import { CirclePicker, ColorResult } from "react-color";
+import { Action } from "./Action";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -152,13 +153,14 @@ export const App = () => {
 
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
+  const [popperSource, setPopperSource] = useState("swatch");
 
   const [sliderValue, setSliderValue] = useState<number>(2);
 
   // console.log("mode--->", mode, color);
-  const handleToggleChange = (
-    event: MouseEvent<HTMLElement>,
-    nextView: string
+  const handleModeChange = (
+    nextView: string,
+    event: MouseEvent<HTMLButtonElement>
   ) => {
     setMode(nextView);
     if (nextView === "brush") {
@@ -166,13 +168,21 @@ export const App = () => {
     } else if (nextView === "erase") {
       setSliderValue(10);
     }
+
+    if (["brush", "textTool", "erase"].includes(nextView)) {
+      console.log("here");
+      handleOpenPopper(nextView)(event);
+    }
   };
 
   const handleColorChange = (color: ColorResult) => {
     setColor(color.hex);
   };
 
-  const handleOpenPopper = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleOpenPopper = (source: string) => (
+    event: MouseEvent<HTMLButtonElement>
+  ) => {
+    setPopperSource(source);
     setAnchorEl(event.currentTarget);
     setOpen(!open);
   };
@@ -215,132 +225,70 @@ export const App = () => {
       </AppBar>
       <Grid container direction="row">
         <Grid item className={classes.leftMenu}>
-          <ToggleButtonGroup
-            orientation="vertical"
-            value={mode}
-            exclusive
-            onChange={handleToggleChange}
-          >
-            <Tooltip title="Move" aria-label="Move" placement="right">
-              <ToggleButton
-                value="move"
-                aria-label="move"
-                style={{
-                  backgroundColor: mode === "move" ? "#7a7a7a" : "inherit",
-                }}
-              >
-                <OpenWithIcon className={classes.iconButton} />
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip title="Pen" aria-label="Pen" placement="right">
-              <ToggleButton
-                value="brush"
-                aria-label="brush"
-                style={{
-                  backgroundColor: mode === "brush" ? "#7a7a7a" : "inherit",
-                }}
-              >
-                <CreateIcon className={classes.iconButton} />
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip
-              title="Drop TextField"
-              aria-label="Drop TextField"
-              placement="right"
-            >
-              <ToggleButton
-                value="textField"
-                aria-label="textField"
-                style={{
-                  backgroundColor: mode === "textField" ? "#7a7a7a" : "inherit",
-                }}
-              >
-                <TextFieldsIcon className={classes.iconButton} />
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip title="Text Tool" aria-label="Text Tool" placement="right">
-              <ToggleButton
-                value="textTool"
-                aria-label="textTool"
-                style={{
-                  backgroundColor: mode === "textTool" ? "#7a7a7a" : "inherit",
-                }}
-              >
-                <TextFormatIcon className={classes.iconButton} />
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip title="Erase" aria-label="Erase" placement="right">
-              <ToggleButton
-                value="erase"
-                aria-label="erase"
-                style={{
-                  backgroundColor: mode === "erase" ? "#7a7a7a" : "inherit",
-                }}
-              >
-                <EraserIcon className={classes.iconButton} />
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip
-              title="Draw Square"
-              aria-label="Draw Square"
-              placement="right"
-            >
-              <ToggleButton
-                value="square"
-                aria-label="square"
-                style={{
-                  backgroundColor: mode === "square" ? "#7a7a7a" : "inherit",
-                }}
-              >
-                <CropSquareIcon className={classes.iconButton} />
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip
-              title="Draw Rectangle"
-              aria-label="Draw Rectangle"
-              placement="right"
-            >
-              <ToggleButton
-                value="rect"
-                aria-label="rect"
-                style={{
-                  backgroundColor: mode === "rect" ? "#7a7a7a" : "inherit",
-                }}
-              >
-                <Crop169Icon className={classes.iconButton} />
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip
-              title="Draw Circle"
-              aria-label="Draw Circle"
-              placement="right"
-            >
-              <ToggleButton
-                value="circle"
-                aria-label="circle"
-                style={{
-                  backgroundColor: mode === "circle" ? "#7a7a7a" : "inherit",
-                }}
-              >
-                <RadioButtonUncheckedIcon className={classes.iconButton} />
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip
-              title="Draw Ellipse"
-              aria-label="Draw Ellipse"
-              placement="right"
-            >
-              <ToggleButton
-                value="ellipse"
-                aria-label="ellipse"
-                style={{
-                  backgroundColor: mode === "ellipse" ? "#7a7a7a" : "inherit",
-                }}
-              >
-                <EllipseIcon className={classes.iconButton} />
-              </ToggleButton>
-            </Tooltip>
-          </ToggleButtonGroup>
+          <Action
+            id="move"
+            mode={mode}
+            icon={OpenWithIcon}
+            onClick={handleModeChange}
+            toolTip="Move"
+          />
+          <Action
+            id="brush"
+            mode={mode}
+            icon={CreateIcon}
+            onClick={handleModeChange}
+            toolTip="Pen Tool"
+          />
+          <Action
+            id="textField"
+            mode={mode}
+            icon={TextFieldsIcon}
+            onClick={handleModeChange}
+            toolTip="TextField Tool"
+          />
+          <Action
+            id="textTool"
+            mode={mode}
+            icon={TextFormatIcon}
+            onClick={handleModeChange}
+            toolTip="Text Tool"
+          />
+          <Action
+            id="erase"
+            mode={mode}
+            icon={EraserIcon}
+            onClick={handleModeChange}
+            toolTip="Erase Tool"
+          />
+          <Action
+            id="square"
+            mode={mode}
+            icon={CropSquareIcon}
+            onClick={handleModeChange}
+            toolTip="Square Tool"
+          />
+          <Action
+            id="rect"
+            mode={mode}
+            icon={Crop169Icon}
+            onClick={handleModeChange}
+            toolTip="Rectangle Tool"
+          />
+          <Action
+            id="circle"
+            mode={mode}
+            icon={RadioButtonUncheckedIcon}
+            onClick={handleModeChange}
+            toolTip="Circle Tool"
+          />
+          <Action
+            id="ellipse"
+            mode={mode}
+            icon={EllipseIcon}
+            onClick={handleModeChange}
+            toolTip="Ellipse Tool"
+          />
+
           <Tooltip title="Undo" aria-label="Undo" placement="right">
             <IconButton onClick={() => {}}>
               <UndoIcon className={classes.iconButton} />
@@ -357,7 +305,7 @@ export const App = () => {
               aria-label="Choose Color"
               placement="right"
             >
-              <IconButton onClick={handleOpenPopper}>
+              <IconButton onClick={handleOpenPopper("swatch")}>
                 <PaletteIcon
                   className={classes.iconButton}
                   style={{
@@ -393,16 +341,6 @@ export const App = () => {
                   // markLabel: classes.markLabel,
                   valueLabel: classes.valueLabel,
                 }}
-                // marks={[
-                //   {
-                //     value: 1,
-                //     label: 1,
-                //   },
-                //   {
-                //     value: 30,
-                //     label: 30,
-                //   },
-                // ]}
               />
             </div>
           )}
@@ -439,30 +377,36 @@ export const App = () => {
               onMouseLeave={() => setOpen(false)}
             >
               <ClickAwayListener onClickAway={() => setOpen(false)}>
-                <CirclePicker
-                  color={color}
-                  onChangeComplete={handleColorChange}
-                  colors={[
-                    "#f44336",
-                    "#e91e63",
-                    "#9c27b0",
-                    "#673ab7",
-                    "#3f51b5",
-                    "#2196f3",
-                    "#03a9f4",
-                    "#00bcd4",
-                    "#009688",
-                    "#4caf50",
-                    "#8bc34a",
-                    "#cddc39",
-                    "#ffeb3b",
-                    "#ffc107",
-                    "#ff9800",
-                    "#ff5722",
-                    "#795548",
-                    "#000000",
-                  ]}
-                />
+                <div>
+                  {popperSource === "swatch" && (
+                    <CirclePicker
+                      color={color}
+                      onChangeComplete={handleColorChange}
+                      colors={[
+                        "#f44336",
+                        "#e91e63",
+                        "#9c27b0",
+                        "#673ab7",
+                        "#3f51b5",
+                        "#2196f3",
+                        "#03a9f4",
+                        "#00bcd4",
+                        "#009688",
+                        "#4caf50",
+                        "#8bc34a",
+                        "#cddc39",
+                        "#ffeb3b",
+                        "#ffc107",
+                        "#ff9800",
+                        "#ff5722",
+                        "#795548",
+                        "#000000",
+                      ]}
+                    />
+                  )}
+                  {popperSource === "brush" && <div>brush</div>}
+                  {popperSource === "erase" && <div>erase</div>}
+                </div>
               </ClickAwayListener>
             </Paper>
           </Fade>
